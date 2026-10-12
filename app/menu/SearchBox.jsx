@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
+import { useCart } from "../Providers";
 import fetcher from "../../lib/fetcher";
 
 export default function SearchBox({ initialData, category = "" }) {
   const [term, setTerm] = useState("");
   const [debouncedTerm, setDebouncedTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [addedDishId, setAddedDishId] = useState(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -43,6 +46,11 @@ export default function SearchBox({ initialData, category = "" }) {
         Failed to load dishes. Please try again.
       </p>
     );
+  }
+
+  function handleAddToCart(dish) {
+    addToCart(dish);
+    setAddedDishId(dish.id);
   }
 
   return (
@@ -96,9 +104,7 @@ export default function SearchBox({ initialData, category = "" }) {
                         height={600}
                         sizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1024px) calc(50vw - 3rem), 33vw"
                         priority={priorityImage}
-                        loading={
-                          priorityImage ? "eager" : "lazy"
-                        }
+                        loading={priorityImage ? "eager" : "lazy"}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -115,12 +121,33 @@ export default function SearchBox({ initialData, category = "" }) {
                       {dish.price} ETB
                     </p>
 
-                    <Link
-                      href={`/menu/${dish.id}`}
-                      className="mt-5 inline-block rounded-lg bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-800"
-                    >
-                      View Dish
-                    </Link>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(dish)}
+                        className="rounded-lg bg-orange-600 px-4 py-2 font-medium text-white transition hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                      >
+                        {addedDishId === dish.id
+                          ? "Add Another"
+                          : "Add to Cart"}
+                      </button>
+
+                      <Link
+                        href={`/menu/${dish.id}`}
+                        className="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-800"
+                      >
+                        View Dish
+                      </Link>
+                    </div>
+
+                    {addedDishId === dish.id && (
+                      <p
+                        className="mt-2 text-sm text-green-700"
+                        role="status"
+                      >
+                        {dish.name} added to cart!
+                      </p>
+                    )}
                   </article>
                 );
               })}
