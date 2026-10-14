@@ -2,57 +2,68 @@
 
 Addis Eats is a food-ordering application built with Next.js App Router and React as part of the IBT Full-Stack Software Development and QA training.
 
-The project brings together file-based routing, rendering strategies, Server and Client Components, authentication, authorization, data validation, Route Handlers, Server Actions, SEO, and performance measurement.
+The project brings together file-based routing, rendering strategies, Server and Client Components, authentication, authorization, data validation, Route Handlers, Server Actions, SEO, performance measurement, and an administrative dashboard.
 
 ## Project Highlights
 
 ### Authentication and Authorization — Day 42
 
-- Sign in and sign out with server-side sessions
-- HTTP-only session cookies
+- Server-side sessions and HTTP-only session cookies
 - Protected routes and safe post-login redirects
 - User-specific order access and ownership checks
 - Staff-only kitchen dashboard
 - Authorization checks inside protected operations
 - Server-side order validation
 
-See [`AUTH.md`](./AUTH.md) for authentication flows, security checks, and implementation limitations.
+See [AUTH.md](./AUTH.md) for authentication flows, security checks, and implementation limitations.
 
 ### Performance and Architecture — Day 43
 
 - Next.js `Image` with explicit dimensions, responsive sizing, and alternative text
-- Local WebP food images
-- Priority loading for the first menu image
+- Local WebP food images and priority loading for the first menu image
 - `next/font` for font optimization
 - Server-rendered initial menu data
 - SWR for subsequent search and pagination requests
-- Production Lighthouse measurements documented in [`PERF.md`](./PERF.md)
 - Environment variable template in `.env.example`
+
+See [PERF.md](./PERF.md) for Lighthouse measurements and optimization findings.
 
 ### SEO and Metadata — Day 44
 
-- Root metadata configuration with a title template and default title
+- Root metadata configuration and title templates
 - Page-specific titles and descriptions
 - Dish metadata generated from shared dish data
 - Open Graph metadata and generated dish social-preview images
 - `MenuItem` JSON-LD structured data
-- Generated `sitemap.xml` containing public pages and dishes
-- `robots.txt` with a sitemap reference and private-route exclusions
+- Generated `sitemap.xml` and `robots.txt`
 - Canonical URLs for pages that support query parameters
 
-Local verification confirmed valid sitemap XML with 11 URLs, expected robots rules, distinct metadata for the homepage, menu, and dish pages, and working dish social-preview image routes. Production-domain metadata and live social previews still require deployment verification.
+Local checks previously confirmed sitemap XML, expected robots rules, page metadata, and dish social-preview routes. Production-domain metadata and live social previews still require deployment verification.
 
 ### Integration and Security — Day 45
 
 - Protected checkout, order, and kitchen routes
-- Session and ownership checks for sensitive operations
-- Server-side validation of order data
-- Server-derived order ownership and trusted dish prices
+- Session, ownership, and role checks
+- Server-side validation and trusted dish prices
+- Server-derived order ownership
 - Debounced menu search
 - Server-provided initial order data with periodic status polling
-- Documented data flow, authorization boundaries, and performance limitations
 
-The current application uses in-memory demo storage. It is not production-ready authentication or durable order storage.
+### Dashboard and UI Improvements — Day 46
+
+- Administrative dashboard with order analytics
+- Order table with sorting and pagination
+- Revenue summaries and breakdowns by neighbourhood and day
+- Menu layout without a redundant category sidebar
+- Centered menu content with responsive horizontal spacing
+- Add to Cart buttons on menu dish cards
+- Temporary "Added to Cart" confirmation after clicking
+- Live navbar cart count based on total item quantities
+- Shared cart state through a React Context provider
+
+The menu uses `SearchBox.jsx` to render searchable, paginated dish cards. `DishList.jsx` is a separate component and is not the active renderer for those cards.
+
+The cart currently uses client-side React state. Its contents reset when the application reloads.
 
 ## Routes
 
@@ -63,19 +74,21 @@ The current application uses in-memory demo storage. It is not production-ready 
 | `/menu/[id]` | Public | View a dish |
 | `/cart` | Public | Manage cart items |
 | `/signin` | Public | Sign in |
+| `/signup` | Public | Register an account |
 | `/checkout` | Signed in | Submit an order |
 | `/orders` | Signed in | View your orders |
 | `/orders/[id]` | Signed in + owner | View an individual order |
-| `/kitchen` | Staff only | Kitchen dashboard |
+| `/dashboard` | Authorized staff | View dashboard analytics |
+| `/kitchen` | Authorized staff | Kitchen dashboard |
 
 The application also provides dish and order API endpoints under `app/api/`.
 
 ## Technology Stack
 
 - Next.js App Router
-- React
-- JavaScript
+- React and JavaScript
 - Server Components and Client Components
+- React Context for cart state
 - Server Actions
 - Route Handlers
 - Next.js Image and Font optimization
@@ -98,7 +111,7 @@ npm install
 
 ### Configure environment variables
 
-Create `.env.local` if local configuration is needed. Use `.env.example` as a reference for the expected variable names.
+If local configuration is needed, create `.env.local` using `.env.example` as a reference:
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -106,7 +119,7 @@ Copy-Item .env.example .env.local
 
 Fill in the values required by your environment. Do not commit `.env.local` or expose server secrets through variables prefixed with `NEXT_PUBLIC_`.
 
-Some environment variables may be optional for the current in-memory learning implementation. Check the relevant code before configuring external services.
+Check the relevant code to determine which variables are required for the current implementation.
 
 ### Start development
 
@@ -118,21 +131,21 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Production Verification
 
-Build the application:
+Run the production build:
 
 ```powershell
 npm run build
 ```
 
-Start the production server:
+To run the production server after a successful build:
 
 ```powershell
 npm run start
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
-The Day 45 application build completed successfully during local verification. Re-run the build after subsequent code changes to confirm the current state.
+The Day 46 build completed successfully during local verification. Re-run the build after subsequent changes to verify the current state.
 
 ## API Overview
 
@@ -154,7 +167,7 @@ Previously verified responses:
 | Method | Endpoint | Purpose |
 |---|---|---|
 | POST | `/api/orders` | Create an authenticated order |
-| GET | `/api/orders/[id]` | Retrieve an order owned by the current user |
+| GET | `/api/orders/[id]` | Retrieve an order subject to access checks |
 
 Protected operations must enforce authentication, authorization, ownership, and server-side validation.
 
@@ -167,13 +180,7 @@ Expected responses include:
 - `404 Not Found` — resource does not exist or is unavailable to the requester
 - `422 Unprocessable Entity` — validation failure
 
-### Security verification
-
-A signed-out request to `POST /api/orders` returned `401 Unauthorized` during local verification.
-
-The safe redirect scenario was also checked: an external URL supplied through the sign-in `next` parameter must not redirect the user outside the application.
-
-Order ownership must additionally be verified with two distinct users to confirm that one user cannot read or cancel another user's order.
+A signed-out request to `POST /api/orders` previously returned `401 Unauthorized` during local verification.
 
 ## Authentication and Security
 
@@ -189,11 +196,11 @@ The application demonstrates:
 
 The proxy provides a navigation guard; it is not a replacement for authorization checks inside Server Actions and Route Handlers.
 
-This is a learning project, not a production-ready authentication service. Review [`AUTH.md`](./AUTH.md) before reusing the authentication code.
+This is a learning project, not a production-ready authentication service. Review [AUTH.md](./AUTH.md) before reusing the authentication code.
 
 ## Performance Report
 
-See [`PERF.md`](./PERF.md) for the baseline, follow-up Lighthouse measurements, optimization experiments, and remaining bottlenecks.
+See [PERF.md](./PERF.md) for the baseline, follow-up Lighthouse measurements, optimization experiments, and remaining bottlenecks.
 
 The latest recorded local `/menu` run scored 73, with:
 
@@ -204,13 +211,13 @@ The latest recorded local `/menu` run scored 73, with:
 
 Results varied between runs. Image-loading changes reduced the observed resource-load delay in one run, but overall performance improvement was not conclusive.
 
-The latest local LCP remains above the 2.5-second target, and the Lighthouse score remains below 90. Deployed performance measurements and some bundle/image-size checks are still outstanding.
+The recorded LCP remains above the 2.5-second target, and the Lighthouse score remains below 90. Deployed performance and some bundle/image-size checks remain outstanding.
 
 ## Project Documentation
 
 | File | Description |
 |---|---|
-| `README.md` | Project overview and setup |
+| `README.md` | Project overview, setup, routes, and features |
 | `AUTH.md` | Authentication and authorization |
 | `BOUNDARY.md` | Server/Client Component boundaries |
 | `DATA.md` | Data, session, and order flow |
@@ -221,11 +228,12 @@ The latest local LCP remains above the 2.5-second target, and the Lighthouse sco
 
 This project is designed for learning and demonstration.
 
-- Sessions, users, and orders use in-memory storage where implemented that way.
+- Users, sessions, and orders use in-memory storage where implemented that way.
 - In-memory data may disappear when the server restarts and is not shared across multiple instances.
+- Cart state is held in client-side React state and is not persisted across reloads.
 - Demo credentials and plain-text passwords are not suitable for real users.
 - Production authentication requires secure password hashing, persistent storage, rate limiting, and appropriate session management.
-- Deployed SEO and performance behavior must be verified against the real production domain.
+- Production SEO and performance behavior must be verified against the deployed domain.
 
 ## Learning Goal
 
@@ -233,23 +241,27 @@ Addis Eats brings together:
 
 ```text
 Routing and Layouts
-        +
+       +
 Rendering Strategies
-        +
+       +
 Server and Client Components
-        +
+       +
 Authentication and Sessions
-        +
+       +
 Authorization and Ownership
-        +
+       +
 Route Handlers and Server Actions
-        +
+       +
 Server-Side Validation
-        +
+       +
+Dashboard Analytics
+       +
+Interactive Cart and Navigation
+       +
 Image and Font Optimization
-        +
+       +
 SEO and Metadata
-        +
+       +
 Production Measurement
 ```
 

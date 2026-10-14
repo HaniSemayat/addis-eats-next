@@ -171,3 +171,83 @@ Use `.env.local` for local secrets and environment-specific configuration. Keep 
 Day 45 brings the data flow together across Server Components, Client Components, Route Handlers, and Server Actions.
 
 The key rule is that **authentication, authorization, validation, order ownership, and price calculation must be enforced on the server**. Client-side controls improve usability but do not replace server-side security.
+---
+
+## Day 46 — Cart and Dashboard Data Flow
+
+### Cart State
+
+The cart uses shared client-side React state provided through `app/Providers.jsx`.
+
+Important components:
+
+- `components/AddToCartButton.jsx` — adds a dish to the cart.
+- `components/CartNavLink.jsx` — displays the total quantity of cart items.
+- `app/menu/SearchBox.jsx` — renders the active menu search interface and Add to Cart controls.
+- `app/cart/page.js` — provides the cart interface.
+
+When a user adds a dish, the shared cart state updates and the navbar count reflects the total quantity across all cart items.
+
+For example, two dishes with quantities of 2 and 3 produce a navbar count of 5.
+
+The current cart state is held in client-side memory and resets when the page is reloaded.
+
+### Cart and Order Separation
+
+The cart is temporary client-side state; an order is a separate server-side record.
+
+```text
+Menu
+  |
+  v
+Add to Cart
+  |
+  v
+Shared React cart state
+  |
+  v
+Review cart
+  |
+  v
+Submit checkout
+  |
+  v
+Server-side validation
+  |
+  v
+Trusted dish prices and total
+  |
+  v
+Create order
+````
+
+The server must not trust prices, totals, or ownership information supplied by the browser. It should validate submitted dish IDs and quantities against trusted server-side data before creating an order.
+
+### Dashboard Analytics
+
+The Day 46 admin dashboard presents summaries derived from order data, including:
+
+- Order counts
+- Revenue summaries
+- Revenue grouped by neighbourhood
+- Daily order counts
+- A sortable and paginated order table
+
+These analytics depend on the application's current order records. Because the demo uses in-memory order storage, data is not durable across server restarts and may differ between separate application instances.
+
+Dashboard analytics must be protected by server-side authorization. Customers must not be able to retrieve staff-only data by directly requesting a dashboard route or data endpoint.
+
+Verify the current dashboard implementation before treating specific authorization rules or analytics calculations as tested guarantees.
+
+### Day 46 Verification Checklist
+
+- Adding a dish updates shared cart state.
+- The navbar count reflects total item quantities.
+- Cart changes are reflected in the cart interface.
+- Reloading the page resets the cart as expected.
+- Checkout validates submitted dish IDs and quantities on the server.
+- Order totals are calculated using trusted dish prices.
+- Dashboard analytics match the available order records.
+- Unauthorized users cannot access protected dashboard data.
+- In-memory storage limitations remain documented.
+

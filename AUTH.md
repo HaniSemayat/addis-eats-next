@@ -481,3 +481,33 @@ The application's `robots.txt` provides crawler directives for private or operat
 These directives guide compliant crawlers but do not prevent direct access to a URL.
 
 Private routes and data must remain protected by authentication and authorization. Private routes are also excluded from the generated sitemap; neither sitemap exclusion nor crawler directives are access-control mechanisms.
+
+## Administrative Dashboard Authorization — Day 46
+
+The `/dashboard` route provides administrative order analytics. Access must be restricted to authorized staff users.
+
+The dashboard displays information such as:
+
+- Order counts and status summaries
+- Revenue summaries
+- Revenue grouped by neighbourhood
+- Daily order counts
+- A sortable, paginated order table
+
+The dashboard is not public merely because it renders a page. The server must verify the user's session and appropriate role before returning protected analytics.
+
+### Authorization expectations
+
+- Signed-out users must not access protected dashboard data.
+- Customers must not access staff-only analytics.
+- Authorized staff can view the dashboard.
+- Sensitive API handlers and Server Actions must enforce their own authorization checks where applicable.
+- Hiding dashboard links in the UI is not sufficient authorization.
+
+The exact implementation should be verified against the current `/dashboard` page and any data-access helpers before these expectations are treated as tested behavior.
+
+### Data and persistence limitation
+
+Dashboard analytics currently use the application's demo order data. Order storage is in memory, so records may disappear when the server restarts and may not be shared across multiple instances.
+
+The dashboard is a learning feature, not a production financial reporting system. Production deployment requires persistent storage, trusted server-side authorization, and appropriate auditing and access controls.

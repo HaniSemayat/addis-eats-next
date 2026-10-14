@@ -1,41 +1,20 @@
 ﻿"use client";
 
-import { useRouter } from "next/navigation";
-
-export default function CategoryBar({
-  categories,
-  selectedCategory = "All",
-}) {
-  const router = useRouter();
-
-  function selectCategory(category) {
-    const slug = category.toLowerCase();
-    const url =
-      category === "All"
-        ? "/menu"
-        : `/menu?category=${encodeURIComponent(slug)}`;
-
-    router.push(url);
-  }
-
+export default function CategoryBar({ categories, selectedCategory, onSelect }) {
   return (
-    <nav
-      aria-label="Filter menu by category"
-      className="mt-4 flex flex-wrap gap-2"
-    >
+    <nav aria-label="Filter dishes by category" className="mb-5 flex flex-wrap gap-2">
       {categories.map((category) => {
-        const isSelected = selectedCategory === category;
-
+        const selected = selectedCategory === category;
         return (
           <button
             key={category}
             type="button"
-            onClick={() => selectCategory(category)}
-            aria-pressed={isSelected}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-              isSelected
-                ? "border-orange-600 bg-orange-600 text-white"
-                : "border-gray-300 bg-white text-gray-700 hover:border-orange-500 hover:text-orange-600"
+            aria-pressed={selected}
+            onClick={() => onSelect(category)}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              selected
+                ? "border-orange-600 bg-orange-600 text-white shadow-sm"
+                : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-700"
             }`}
           >
             {category}

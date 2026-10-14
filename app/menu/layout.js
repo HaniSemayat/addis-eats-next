@@ -1,9 +1,7 @@
 ﻿export default function MenuLayout({ children }) {
   return (
-    <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl">
-        {children}
-      </div>
-    </div>
+    <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {children}
+    </section>
   );
 }

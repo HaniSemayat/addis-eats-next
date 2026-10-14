@@ -531,3 +531,171 @@ Server validation and authorization
 8. In-memory stores are learning tools, not a substitute for production persistence.
 9. SEO directives do not protect private data.
 10. Production claims must be supported by production verification.
+---
+
+## Day 46 — Cart and Admin Dashboard Strategy
+
+### 1. Shared Cart State
+
+Day 46 introduces shared client-side cart state through `app/Providers.jsx`.
+
+The main components are:
+
+- `components/AddToCartButton.jsx` — adds a dish to the cart and displays temporary confirmation feedback.
+- `components/CartNavLink.jsx` — displays the total quantity of cart items in the navbar.
+- `app/menu/SearchBox.jsx` — renders the active interactive menu and its Add to Cart controls.
+- `app/cart/page.js` — provides the cart interface.
+
+The navbar count represents the sum of the quantities of all cart items, rather than the number of distinct dishes.
+
+For example, if a cart contains two dishes with quantities of 2 and 3, the navbar displays 5.
+
+The root `app/layout.js` wraps the application content in `Providers`, allowing client components within the shared layout to access the cart context.
+
+This does not require converting the entire root layout into a Client Component.
+
+### 2. Cart and Checkout Boundary
+
+The cart is client-side interaction state, while order creation is a server-side operation.
+
+```text
+Interactive menu
+       |
+       v
+AddToCartButton
+       |
+       v
+Shared cart state
+       |
+       v
+Cart interface
+       |
+       v
+Checkout submission
+       |
+       v
+Server-side validation
+       |
+       v
+Trusted dish prices
+       |
+       v
+Order creation
+````
+
+Client-side state improves usability, but it is not an authoritative record of an order.
+
+The server must validate submitted dish IDs and quantities, calculate totals using trusted dish prices, and derive order ownership from the authenticated session.
+
+The current cart state resets on page reload. Persistent cart storage is not part of this implementation.
+
+### 3. Admin Dashboard Strategy
+
+The Day 46 dashboard extends the application with order analytics and an interactive order table.
+
+The documented dashboard features include:
+
+- Order counts and status summaries
+- Revenue summaries
+- Revenue grouped by neighbourhood
+- Daily order counts
+- Sorting and pagination
+
+The dashboard depends on the application's order data. Since the demonstration uses in-memory order storage, its records are not durable across server restarts and are not automatically shared between application instances.
+
+The dashboard must be protected by server-side authorization appropriate to the application's staff roles.
+
+Hiding a dashboard link or restricting access in a Client Component is not sufficient. Direct navigation and requests for protected data must also be checked on the server.
+
+Verify the current dashboard page and its data-access helpers before treating particular role checks or authorization behavior as confirmed implementation details.
+
+### 4. Rendering and Client Boundaries
+
+Server Components remain the default.
+
+Client Components are used for features that need browser interaction or client-side state.
+
+Day 46 adds or uses these client-side components:
+
+- `app/Providers.jsx`
+- `components/AddToCartButton.jsx`
+- `components/CartNavLink.jsx`
+- `app/menu/SearchBox.jsx`
+- `app/cart/page.js`
+
+The existing menu search and filtering components continue to support interactive behavior.
+
+The server-rendered menu can provide initial dish data without making an unnecessary HTTP request to its own API. Client-side searches and pagination can continue to request updated results through the API.
+
+The dashboard's precise Server/Client boundary should be confirmed against its current source files.
+
+### 5. Data and Security Principles
+
+The cart and dashboard do not change the application's core security requirements.
+
+- Client-submitted prices must not determine order totals.
+- Client-submitted user IDs must not determine order ownership.
+- Protected order data must be checked against the authenticated user's permissions.
+- Staff-only analytics must not be available to unauthorized customers.
+- Server Actions and Route Handlers must perform their own required authorization checks.
+- UI restrictions must not be treated as security boundaries.
+
+The current in-memory data model is appropriate for learning and local demonstrations, not durable production order processing.
+
+### 6. Performance Considerations
+
+Day 46 adds cart interaction and dashboard functionality, but no new Lighthouse measurements are recorded here.
+
+The menu, cart, and dashboard have different performance characteristics and should be measured separately where appropriate.
+
+The next verification should include:
+
+- Production-build Lighthouse measurements for `/menu`.
+- A separate performance assessment of the dashboard.
+- Verification of the `/menu` First Load JS size.
+- Inspection of delivered image sizes.
+- Investigation of long main-thread tasks if Total Blocking Time remains high.
+
+The latest recorded local menu result remains a Performance score of 73, FCP of 0.9 seconds, LCP of 3.4 seconds, TBT of 800 milliseconds, CLS of 0, and Speed Index of 1.8 seconds.
+
+These are earlier local measurements, not Day 46 or deployed results. The Day 45 performance targets remain unverified or unmet as documented in `PERF.md`.
+
+### 7. Day 46 Verification Checklist
+
+- Adding a dish updates shared cart state.
+- The navbar displays the total cart quantity.
+- Cart interactions work without a full-page reload.
+- Cart state resets on reload as expected.
+- Checkout validates submitted items on the server.
+- Order totals use trusted dish prices.
+- Order ownership comes from the authenticated session.
+- Dashboard analytics reflect the available order records.
+- Unauthorized users cannot access protected dashboard data.
+- Performance impact is measured separately from previous Lighthouse runs.
+- In-memory persistence limitations remain documented.
+
+### Day 46 Summary
+
+Day 46 brings cart interaction and administrative analytics into the existing architecture.
+
+The key boundary remains:
+
+```
+Client-side interaction
+          |
+          v
+Untrusted input
+          |
+          v
+Server-side validation
+          |
+          v
+Authentication and authorization
+          |
+          v
+Trusted data operation
+```
+
+The cart provides immediate browser feedback, while the server remains responsible for validating and creating orders. The dashboard presents operational data but must not bypass server-side access control.
+
+Performance improvements and security guarantees should only be claimed after the relevant behavior has been verified.

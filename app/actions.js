@@ -10,6 +10,7 @@ import {
   createOrder,
   getOrderForUser,
   markCancelled,
+  setOrderStatus,
 } from "../lib/orders";
 
 import {
@@ -83,16 +84,21 @@ export async function signIn(previousState, formData) {
     role: user.role,
   });
 
-  const safeNext =
-    typeof next === "string" &&
-    next.startsWith("/") &&
-    !next.startsWith("//") &&
-    !next.includes("\\") &&
-    !/[\r\n]/.test(next)
-      ? next
-      : "/";
+    const safeNext =
+      typeof next === "string" &&
+      next.startsWith("/") &&
+      !next.startsWith("//") &&
+      !next.includes("\\") &&
+      !/[\r\n]/.test(next)
+        ? next
+        : "/";
 
-  redirect(safeNext);
+    const destination =
+      user.role === "staff" && safeNext === "/"
+        ? "/admin"
+        : safeNext;
+
+    redirect(destination);
 }
 
 export async function signOut() {
@@ -181,3 +187,32 @@ export async function cancelOrder(orderId) {
   revalidatePath("/orders");
 }
 
+
+
+export async function updateOrderStatus(formData) {
+  const session = await getSession();
+
+  if (!session || session.role !== "staff") {
+    throw new Error("Only authorized staff can update order status.");
+  }
+
+  const orderId = formData.get("orderId");
+  const status = formData.get("status");
+
+  if (typeof orderId !== "string" || !/^\d+$/.test(orderId)) {
+    throw new Error("Invalid order ID.");
+  }
+
+  await setOrderStatus(orderId, status);
+
+  const { getOrder } = await import("../lib/orders");
+  const updatedOrder = await getOrder(orderId);
+
+  if (!updatedOrder) {
+    throw new Error("Order not found.");
+  }
+
+  revalidatePath("/kitchen");
+  revalidatePath("/orders");
+  revalidatePath(`/orders/${orderId}`);
+}

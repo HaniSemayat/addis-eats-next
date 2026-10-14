@@ -261,3 +261,65 @@ The project includes local WebP images, Next.js image optimization, responsive i
 The latest recorded local `/menu` run scored 73, with FCP 0.9 s, LCP 3.4 s, TBT 800 ms, CLS 0, and Speed Index 1.8 s.
 
 The image-loading changes reduced the observed resource-load delay in the latest breakdown, but overall performance improvement is not conclusive. The LCP and Lighthouse targets remain unmet in the latest local run. Deployed measurements, JavaScript bundle size, and image-size verification remain outstanding Day 45 tasks.
+---
+
+## Day 46 — Cart and Admin Dashboard Performance
+
+### Changes Introduced
+
+Day 46 adds cart interactions and administrative dashboard analytics.
+
+The main changes include:
+
+- Shared React cart state through `app/Providers.jsx`.
+- Add to Cart interactions through `components/AddToCartButton.jsx`.
+- A live navbar cart quantity through `components/CartNavLink.jsx`.
+- Interactive menu controls in `app/menu/SearchBox.jsx`.
+- Dashboard analytics and a sortable, paginated order table.
+
+These changes introduce or extend client-side interaction and dashboard functionality. Their effect on loading performance must be measured rather than assumed.
+
+### Performance Considerations
+
+#### Cart
+
+The navbar cart count updates when shared cart state changes. This provides immediate feedback without requiring a page reload.
+
+The implementation should keep client-side state scoped to components that need it rather than converting the entire application into a Client Component.
+
+#### Admin Dashboard
+
+The dashboard provides order counts, revenue summaries, revenue grouped by neighbourhood, daily order counts, and an interactive order table.
+
+Sorting and pagination should avoid unnecessary work when handling larger datasets. The current demonstration uses in-memory data, so performance with a production-sized order history has not been established.
+
+Dashboard performance should be measured separately from the public menu because its data, rendering, and interaction patterns differ.
+
+### Verification Status
+
+No new Lighthouse measurements are recorded here for Day 46.
+
+The latest recorded local menu measurement remains:
+
+| Metric | Latest recorded result |
+|---|---:|
+| Performance | 73 |
+| First Contentful Paint | 0.9 s |
+| Largest Contentful Paint | 3.4 s |
+| Total Blocking Time | 800 ms |
+| Cumulative Layout Shift | 0 |
+| Speed Index | 1.8 s |
+
+These values come from the earlier local production-build test. They are not Day 46 measurements or deployed-site results.
+
+### Next Checks
+
+- [ ] Run Lighthouse against the production build after Day 46 changes.
+- [ ] Compare menu metrics against the previous local measurements.
+- [ ] Measure the dashboard separately.
+- [ ] Check the production build output for the `/menu` JavaScript bundle size.
+- [ ] Verify delivered image sizes in the browser Network panel.
+- [ ] Inspect long main-thread tasks if Total Blocking Time remains high.
+- [ ] Record new measurements without replacing historical results.
+
+The Day 46 features are implemented, but their performance impact remains unverified until new measurements are collected.

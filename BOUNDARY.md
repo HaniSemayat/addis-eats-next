@@ -292,3 +292,92 @@ Validated protected operation
 The rendering principle is to serve initial data efficiently and use client-side interaction only where needed.
 
 The performance principle is to measure actual behavior before claiming an optimization has worked.
+---
+
+## Day 46 — Cart and Admin Dashboard Boundaries
+
+### Root Layout and Shared Providers
+
+`app/layout.js` remains the root layout and establishes the shared application structure.
+
+`app/Providers.jsx` provides client-side React context to components that need shared state.
+
+The layout wraps the application content with the provider so components such as the navbar can access cart state without turning the entire application into a Client Component.
+
+### Cart Interaction
+
+The cart feature uses Client Components for browser interaction and shared React state.
+
+Important files:
+
+- `app/Providers.jsx` — provides shared client-side state.
+- `components/CartNavLink.jsx` — reads cart state and displays the total item quantity in the navbar.
+- `components/AddToCartButton.jsx` — adds a dish to the cart and shows temporary confirmation feedback.
+- `app/menu/SearchBox.jsx` — renders the active interactive menu and its Add to Cart controls.
+- `app/cart/page.js` — provides the cart interface.
+
+The cart count represents the sum of item quantities, not simply the number of distinct dishes.
+
+### Menu Rendering
+
+The menu uses server-rendered initial data together with client-side interaction.
+
+`app/menu/SearchBox.jsx` is the active menu renderer for the search interface and Add to Cart controls. `app/menu/DishList.jsx` also exists, but it should not be documented as the active renderer without verifying its current usage.
+
+Only components that require browser interaction or client-side state should need the client boundary.
+
+### Admin Dashboard
+
+The Day 46 dashboard adds order analytics and an interactive order table.
+
+The documented features include:
+
+- Order counts and status summaries
+- Revenue summaries
+- Revenue grouped by neighbourhood
+- Daily order counts
+- Sorting and pagination
+
+The dashboard's rendering boundary and access-control behavior must be verified against the current `app/dashboard` source files and the server-side data-access helpers.
+
+If the dashboard is a Server Component, it can retrieve data and perform authorization checks on the server before rendering. If it contains interactive controls, those controls can be isolated into Client Components.
+
+Dashboard analytics must not be exposed to unauthorized users merely because the interface hides a navigation link. Protected data must be authorized on the server.
+
+### State and Persistence
+
+The cart currently uses in-memory React state.
+
+- Cart quantities update the navbar count.
+- Adding an item updates the shared cart state.
+- Cart state resets when the page is reloaded.
+- Cart state is not a persistent order record.
+- Order persistence depends on the application's separate order-storage implementation.
+
+Client-side cart state must not be treated as trusted input for checkout. The server must validate submitted items and calculate order totals from trusted dish data.
+
+### Day 46 Boundary Summary
+
+```text
+Server-rendered application
+          |
+          v
+Shared Providers
+          |
+          +---- Navbar cart count
+          |
+          +---- Interactive menu
+          |          |
+          |          v
+          |     Add to Cart
+          |
+          +---- Cart interface
+          |
+          +---- Admin dashboard
+                     |
+                     v
+             Server-side data
+             and authorization
+```
+
+This diagram describes the architectural responsibilities. Verify the dashboard's actual component boundaries and authorization checks in source before treating them as tested guarantees.
