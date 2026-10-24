@@ -1,4 +1,4 @@
-﻿# Addis Eats — Next.js Learning Project
+﻿# Addis Eats — Next.js Learning Project [https://addis-eats-next-amber.vercel.app/]
 
 Addis Eats is a food-ordering application built with Next.js App Router and React as part of the IBT Full-Stack Software Development and QA training.
 
