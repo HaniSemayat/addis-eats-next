@@ -381,3 +381,146 @@ Shared Providers
 ```
 
 This diagram describes the architectural responsibilities. Verify the dashboard's actual component boundaries and authorization checks in source before treating them as tested guarantees.
+
+## Day 47 — Next.js Integration Boundaries
+
+Day 47 brings routing, rendering, data access, and security together in one Next.js App Router application.
+
+### App Router and Rendering
+
+The application uses file-based routing, nested layouts, and special route files.
+
+| Route | Intended rendering strategy | Responsibility |
+|---|---|---|
+| `/` | Static | Landing page |
+| `/menu` | Revalidated | Menu data |
+| `/menu/[id]` | Static generation | Individual dish pages |
+| `/cart` | Client interaction | Cart quantities and totals |
+| `/checkout` | Dynamic | Checkout and order submission |
+
+These are intended strategies. Confirm actual route classifications with `npm run build`, because data dependencies and route configuration can change the resulting behavior.
+
+### Route Handlers
+
+Route Handlers under `app/api/` provide HTTP endpoints for dish and order operations.
+
+They should validate incoming data and enforce authentication, authorization, and ownership checks where required. Server-side data access should not depend on the browser being the only caller.
+
+### Server Actions
+
+Server Actions support operations such as checkout and other protected mutations.
+
+A Server Action is an entry point that must be treated as callable by an untrusted client. Sensitive actions must check the current session, authorization, resource ownership, and input validity before modifying data.
+
+Order prices and ownership must be derived from trusted server-side information, not accepted from browser-submitted values.
+
+### Loading, Error, and Not-Found UI
+
+The application uses Next.js special files where implemented:
+
+- `loading.js` provides a loading state for its route segment.
+- `error.js` provides error handling for its route segment.
+- `not-found.js` provides not-found UI.
+
+An error boundary improves failure handling but does not replace validation or authorization.
+
+### Revalidation
+
+The application uses revalidation where configured to refresh data after an appropriate interval or supported mutation.
+
+Revalidation affects cached route data; it does not make in-memory application state persistent. Persistent users, sessions, and orders require a suitable storage architecture.
+
+### Authentication and Server Boundaries
+
+The proxy can provide early navigation redirects, but sensitive operations must verify the session and permissions on the server.
+
+The current session and user implementations use in-memory storage. They are not reliable across restarts or separate server instances. Production sign-in is still awaiting reliable end-to-end verification.
+
+### Day 47 Verification Checklist
+
+- [ ] Route classifications match the production build output.
+- [ ] Server Components fetch initial server-side data directly where appropriate.
+- [ ] Client Components are limited to features that require client-side interaction.
+- [ ] Route Handlers validate requests and protect private data.
+- [ ] Server Actions enforce authentication and authorization independently of the UI.
+- [ ] Order ownership is derived from the authenticated session.
+- [ ] Loading, error, and not-found states behave as expected.
+- [ ] Revalidation refreshes the intended data.
+- [ ] Production authentication and persistence limitations are documented.
+
+### Boundary Principle
+
+The browser can request an operation, but the server decides whether the operation is authorized.
+
+The goal is to keep server-only data and security checks on the server while sending only the information and interactive components the browser needs.
+
+
+
+## Day 48 — Event Handling and Interactive Boundaries
+
+Day 48 reinforces the separation between server-side responsibilities and browser interaction.
+
+### Client-Side Event Handling
+
+Client Components handle browser events such as clicks, keyboard input, and form submissions.
+
+- Use semantic buttons for actions and links for navigation.
+- Handle form submission through the form's `onSubmit` behavior.
+- Use `preventDefault()` when the browser's default action must be prevented.
+- Use `stopPropagation()` only when an event should not reach ancestor handlers.
+- Understand `target` and `currentTarget` when handling events.
+- Provide visible focus indicators and keyboard-accessible controls.
+- Do not make essential interactions dependent on hover alone.
+- Provide practical touch targets of approximately 44 × 44 CSS pixels where appropriate.
+
+### Form and Server Action Boundary
+
+A Client Component can collect input, show pending feedback, and display validation errors. It must not be trusted to authorize a sensitive operation.
+
+The intended flow is:
+
+```text
+Client Component
+       |
+       v
+Form submission
+       |
+       v
+Server Action
+       |
+       v
+Authenticate and authorize
+       |
+       v
+Validate submitted data
+       |
+       v
+Perform the operation
+       |
+       v
+Return action state
+       |
+       v
+Update the interface
+````
+
+Server Actions must validate input and enforce authentication, permissions, and ownership independently of client-side checks. Duplicate-submission protection must be enforced on the server when an operation must not be repeated.
+
+### Checkout Submission Safety
+
+The checkout form uses `useActionState` to manage the Server Action's result and pending state.
+
+The submit button should communicate pending status and prevent ordinary repeated clicks while a submission is in progress. Server-side validation and idempotency remain necessary because client-side controls cannot prevent every repeated or concurrent request.
+
+The current idempotency helper uses process-local in-memory storage. It is a learning implementation and does not provide durable protection across server restarts or multiple server instances.
+
+### Verification
+
+After changing interaction or submission behavior, verify the relevant implementation and run:
+
+- `npm run lint`
+- `git diff --check`
+
+Test keyboard navigation, focus visibility, form errors, pending feedback, and repeated submissions where applicable. A successful lint or build does not prove that every interaction or security check works correctly.
+
+Deployment verification remains a separate follow-up task.

@@ -31,6 +31,8 @@ export default function Providers({ children }) {
       const saved = localStorage.getItem("addiseats-favorites");
       if (saved) {
         const parsed = JSON.parse(saved);
+        // Intentional hydration: restore saved favorites from browser storage.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (Array.isArray(parsed)) setFavorites(parsed);
       }
     } catch {
@@ -79,6 +81,8 @@ export default function Providers({ children }) {
 
   const clearCart = useCallback(() => setItems([]), []);
 
+  const clearFavorites = useCallback(() => setFavorites([]), []);
+
   const toggleFavorite = useCallback((dish) => {
     setFavorites((current) =>
       current.some((item) => item.id === dish.id)
@@ -102,10 +106,11 @@ export default function Providers({ children }) {
       value={{ items, addToCart, increaseQuantity, decreaseQuantity, total, clearCart }}
     >
       <FavoritesContext.Provider
-        value={{ favorites, toggleFavorite, isFavorite, favoritesReady }}
+        value={{ favorites, toggleFavorite, clearFavorites, isFavorite, favoritesReady }}
       >
         {children}
       </FavoritesContext.Provider>
     </CartContext.Provider>
   );
 }
+
